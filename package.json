@@ -1,0 +1,14 @@
+{
+  "private": true,
+  "devDependencies": {
+    "parcel": "2.7.0",
+    "purescript": "^0.15.4",
+    "spago": "^0.20.9"
+  },
+  "scripts": {
+    "build": "spago build",
+    "test": "spago test",
+    "serve": "spago bundle-app --to dev/index.js && esbuild --servedir=dev",
+    "build-prod": "rm -rf dist/ && mkdir -p dist && cp dev/index.html dist/ && spago bundle-app --to dev/index.js && esbuild --bundle dev/index.js --minify --no-build --outfile=dist/index.js"
+  }
+}
