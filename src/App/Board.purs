@@ -1,9 +1,9 @@
-module Board where
+module App.Board where
 
 import Data.Maybe (Maybe)
 
 type Board =
   { id :: String
   , name :: String
-  , board :: Array String
+  , board :: Array (Maybe Int)
   }

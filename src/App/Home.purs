@@ -5,12 +5,7 @@ import Halogen.HTML as HH
 import Halogen.HTML.Properties as HP
 import Web.HTML.Common (ClassName(..))
 import Effect.Aff.Class (class MonadAff)
-
-type Board =
-  { id :: String
-  , name :: String
-  , board :: Array String
-  }
+import App.Board
 
 type State =
   {
