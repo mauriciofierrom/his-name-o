@@ -6,5 +6,9 @@
   </head>
   <body>
     <script src="./index.js" type="module"></script>
+    <script>
+      // To automatically reload on esbuild change
+      new EventSource('/esbuild').addEventListener('change', () => location.reload())
+    </script>
   </body>
 </html>
