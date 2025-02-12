@@ -8,7 +8,8 @@
   "scripts": {
     "build": "spago build",
     "test": "spago test",
-    "serve": "spago bundle-app --to dev/index.js && esbuild --servedir=dev",
+    "serve": "esbuild dev/index.js --servedir=dev --watch --outfile=dev/index.js",
+    "watch": "spago bundle-app --watch --to dev/index.js",
     "build-prod": "rm -rf dist/ && mkdir -p dist && cp dev/index.html dist/ && spago bundle-app --to dev/index.js && esbuild --bundle dev/index.js --minify --no-build --outfile=dist/index.js"
   }
 }
