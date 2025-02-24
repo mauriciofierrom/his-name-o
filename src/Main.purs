@@ -1,8 +1,9 @@
-module Main where
+module Main (main) where
 
 import Prelude
 
-import App.Home
+import App.Home (component)
+
 import Effect (Effect)
 import Halogen.Aff as HA
 import Halogen.VDom.Driver (runUI)
