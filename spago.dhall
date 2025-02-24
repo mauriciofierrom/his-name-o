@@ -1,7 +1,20 @@
 { name = "his-name-o!"
-, dependencies = [ "console", "effect", "halogen", "prelude", "aff"
-                 , "maybe", "web-html"
-                 ]
+, dependencies =
+  [ "aff"
+  , "aff-promise"
+  , "arrays"
+  , "console"
+  , "effect"
+  , "enums"
+  , "foldable-traversable"
+  , "halogen"
+  , "integers"
+  , "lists"
+  , "maybe"
+  , "ordered-collections"
+  , "prelude"
+  , "tuples"
+  ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs", "test/**/*.purs" ]
 }
