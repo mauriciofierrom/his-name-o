@@ -10,13 +10,14 @@ module App.Components.Board
 import Prelude
 
 import Control.Promise (toAffE)
-import App.Board (Board, BoardValue(..), Id, Index, Letter, emptyBoard, toString, updateValue)
+import App.Board (Board, BoardValue(..), Id, Index, Letter, MarkedValue, emptyBoard, toString, updateValue)
 import Data.Map (Map)
 import Data.Map as M
 import Data.List as L
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.FoldableWithIndex (foldrWithIndex)
 import Data.Array (concat, mapWithIndex)
+import Data.Tuple (Tuple(..))
 import Effect.Aff.Class (class MonadAff)
 import Effect.Uncurried (runEffectFn1)
 import Halogen as H
@@ -166,18 +167,21 @@ editActions Edition =
       [ HH.text "Save" ]
   ]
 
-cellWrapper :: forall m. H.ComponentHTML Action () m -> H.ComponentHTML Action () m
-cellWrapper inner =
-  HH.div
-    [ HP.class_ (ClassName "h-full w-full aspect-square border-none rounded flex items-center justify-center p-2 text-lg bg-gray-50") ]
-    [ inner ]
+cellWrapper :: forall m. Boolean -> H.ComponentHTML Action () m -> H.ComponentHTML Action () m
+cellWrapper marked inner =
+  let
+    bg = if marked then "bg-teal-50" else "bg-gray-50"
+  in
+    HH.div
+      [ HP.class_ (ClassName $ bg <> " h-full w-full aspect-square border-none rounded flex items-center justify-center p-2 text-lg") ]
+      [ inner ]
 
 blockedCell :: forall m. H.ComponentHTML Action () m
 blockedCell = HH.i [ HP.class_ (ClassName "bi bi-x-lg") ] []
 
-renderCellInput :: forall m. Letter -> Int -> BoardValue -> H.ComponentHTML Action () m
-renderCellInput letter idx value =
-  cellWrapper $
+renderCellInput :: forall m. Letter -> Int -> MarkedValue -> H.ComponentHTML Action () m
+renderCellInput letter idx (Tuple _marked value) =
+  cellWrapper false $
     case value of
       None -> blockedCell
       _ ->
@@ -188,15 +192,15 @@ renderCellInput letter idx value =
           , HE.onValueInput (UpdateCell letter idx)
           ]
 
-renderCell :: forall m. BoardValue -> H.ComponentHTML Action () m
-renderCell value =
-  cellWrapper $
+renderCell :: forall m. MarkedValue -> H.ComponentHTML Action () m
+renderCell (Tuple marked value) =
+  cellWrapper marked $
     case value of
       Number number -> HH.text (show number)
       Empty -> HH.text ""
-      None -> HH.i [ HP.class_ (ClassName "bi bi-x-lg") ] []
+      None -> HH.i [ HP.class_ (ClassName $ "bi bi-x-lg" <> if marked then " bg-teal" else "") ] []
 
-renderCells :: forall m. Mode -> Map Letter (Array BoardValue) -> Array (H.ComponentHTML Action () m)
+renderCells :: forall m. Mode -> Map Letter (Array MarkedValue) -> Array (H.ComponentHTML Action () m)
 renderCells Display board = map renderCell (concat $ L.toUnfoldable $ M.values board)
 renderCells Edition board =
   foldrWithIndex (\letter values acc -> mapWithIndex (renderCellInput letter) values <> acc) [] board

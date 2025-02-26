@@ -17,7 +17,7 @@ module App.Persistence
 
 import Prelude
 
-import Data.Tuple (Tuple(..))
+import Data.Tuple (Tuple(..), snd)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Map as M
 import Effect (Effect)
@@ -55,11 +55,11 @@ toPersistentBoard { id, name, board } =
   { id: fromMaybe 0 id
   , name: name
   , board:
-      { b: maybe [] (map toPersistedValue) $ M.lookup B board
-      , i: maybe [] (map toPersistedValue) $ M.lookup I board
-      , n: maybe [] (map toPersistedValue) $ M.lookup N board
-      , g: maybe [] (map toPersistedValue) $ M.lookup G board
-      , o: maybe [] (map toPersistedValue) $ M.lookup O board
+      { b: maybe [] (map $ toPersistedValue <<< snd) $ M.lookup B board
+      , i: maybe [] (map $ toPersistedValue <<< snd) $ M.lookup I board
+      , n: maybe [] (map $ toPersistedValue <<< snd) $ M.lookup N board
+      , g: maybe [] (map $ toPersistedValue <<< snd) $ M.lookup G board
+      , o: maybe [] (map $ toPersistedValue <<< snd) $ M.lookup O board
       }
   }
 
@@ -69,11 +69,11 @@ fromPersistentBoard { id, name, board: values } =
   { id: Just id
   , name: name
   , board: M.fromFoldable
-      [ Tuple B (map fromPersistedValue values.b)
-      , Tuple I (map fromPersistedValue values.i)
-      , Tuple N (map fromPersistedValue values.n)
-      , Tuple G (map fromPersistedValue values.g)
-      , Tuple O (map fromPersistedValue values.o)
+      [ Tuple B (map (Tuple false <<< fromPersistedValue) values.b)
+      , Tuple I (map (Tuple false <<< fromPersistedValue) values.i)
+      , Tuple N (map (Tuple false <<< fromPersistedValue) values.n)
+      , Tuple G (map (Tuple false <<< fromPersistedValue) values.g)
+      , Tuple O (map (Tuple false <<< fromPersistedValue) values.o)
       ]
   }
 
