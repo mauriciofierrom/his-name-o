@@ -6,27 +6,31 @@ module App.Board
   ( Id
   , Index
   , Board
+  , MarkedValue
   , BoardValue(..)
   , parseBoardValue
   , toString
   , emptyBoard
   , Letter(..)
   , updateValue
+  , updateMark
   ) where
 
 import Prelude
 
-import Data.Generic.Rep (class Generic)
+import Data.Array (findIndex, modifyAt, replicate, zip)
+import Data.Bounded.Generic (genericBottom, genericTop)
 import Data.Enum (class BoundedEnum, class Enum, enumFromTo)
 import Data.Enum.Generic (genericCardinality, genericFromEnum, genericPred, genericSucc, genericToEnum)
-import Data.Bounded.Generic (genericBottom, genericTop)
-import Data.Show.Generic (genericShow)
+import Data.Generic.Rep (class Generic)
 import Data.Int (fromString)
-import Data.Tuple (Tuple(..))
-import Data.Map as M
 import Data.Map (Map)
-import Data.Array (replicate, updateAt)
+import Data.Map as M
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Show.Generic (genericShow)
+import Data.String (drop, toUpper)
+import Data.String.CodeUnits (charAt)
+import Data.Tuple (Tuple(..))
 
 -- | Id of a board
 -- |
@@ -35,6 +39,8 @@ type Id = Int
 
 -- | Index of a value of a column
 type Index = Int
+
+type MarkedValue = Tuple Boolean BoardValue
 
 -- | The representation of a Bingo Board
 -- |
@@ -46,7 +52,7 @@ type Index = Int
 type Board =
   { id :: Maybe Id
   , name :: String
-  , board :: Map Letter (Array BoardValue)
+  , board :: Map Letter (Array MarkedValue)
   }
 
 -- | The representation of a value in a board
@@ -61,6 +67,12 @@ data BoardValue
   = Number Int
   | Empty
   | None
+
+derive instance genericBoardValue :: Generic BoardValue _
+derive instance eqBoardValue :: Eq BoardValue
+
+instance Show BoardValue where
+  show = genericShow
 
 -- | Parses a board value from its textual representation e.g. as a value from an `input` element
 -- |
@@ -109,6 +121,14 @@ instance BoundedEnum Letter where
   toEnum = genericToEnum
   fromEnum = genericFromEnum
 
+parseLetter :: Char -> Maybe Letter
+parseLetter 'B' = Just B
+parseLetter 'I' = Just I
+parseLetter 'N' = Just N
+parseLetter 'G' = Just G
+parseLetter 'O' = Just O
+parseLetter _ = Nothing
+
 allLetters :: Array Letter
 allLetters = enumFromTo bottom top
 
@@ -116,14 +136,41 @@ empties :: Letter -> Array BoardValue
 empties N = [ Empty, Empty, None, Empty, Empty ]
 empties _ = replicate 5 Empty
 
-initialValues :: Map Letter (Array BoardValue)
-initialValues = M.fromFoldable $ map (\letter -> Tuple letter (empties letter)) allLetters
+initialValues :: Map Letter (Array MarkedValue)
+initialValues = M.fromFoldable $ map (\letter -> Tuple letter (zip (replicate 5 false) $ empties letter)) allLetters
 
-updateColumnValue :: Index -> String -> Array BoardValue -> Array BoardValue
+updateColumnValue :: Index -> String -> Array MarkedValue -> Array MarkedValue
 updateColumnValue idx value values =
-  fromMaybe values $ updateAt idx (parseBoardValue value) values
+  fromMaybe values $ modifyAt idx (\(Tuple marked _value) -> Tuple marked $ parseBoardValue value) values
 
 -- | Update a value in a provided column at the provided index
 updateValue :: Letter -> Index -> String -> Board -> Board
 updateValue letter idx value leBoard =
   leBoard { board = M.update (Just <<< updateColumnValue idx value) letter leBoard.board }
+
+-- Unmark a value in the board
+updateMark :: String -> Board -> Board
+updateMark rawNumber board = fromMaybe board $ do
+  Tuple letter number <- parseNumber rawNumber
+  column <- M.lookup letter board.board
+  idx <- findIndex (numberPred number) column
+  pure $ markValue letter idx board
+  where
+  numberPred number (Tuple _ (Number n)) = n == number
+  numberPred _ _ = false
+
+markValue :: Letter -> Index -> Board -> Board
+markValue letter idx board =
+  board { board = M.update (Just <<< updateMarkAtIndex idx) letter board.board }
+
+updateMarkAtIndex :: Index -> Array MarkedValue -> Array MarkedValue
+updateMarkAtIndex idx values =
+  fromMaybe values $ modifyAt idx (\(Tuple mark value) -> Tuple (not mark) value) values
+
+parseNumber :: String -> Maybe (Tuple Letter Int)
+parseNumber str = do
+  firstChar <- charAt 0 $ toUpper str
+  letter <- parseLetter firstChar
+  let numberStr = drop 1 str
+  number <- fromString numberStr
+  pure $ Tuple letter number
