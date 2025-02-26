@@ -13,6 +13,7 @@
   , "maybe"
   , "ordered-collections"
   , "prelude"
+  , "strings"
   , "tuples"
   ]
 , packages = ./packages.dhall
