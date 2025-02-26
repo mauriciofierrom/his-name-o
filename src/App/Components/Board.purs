@@ -169,7 +169,7 @@ editActions Edition =
 cellWrapper :: forall m. H.ComponentHTML Action () m -> H.ComponentHTML Action () m
 cellWrapper inner =
   HH.div
-    [ HP.class_ (ClassName "w-15 aspect-square border-none rounded flex items-center justify-center p-2 text-lg bg-gray-50") ]
+    [ HP.class_ (ClassName "h-full w-full aspect-square border-none rounded flex items-center justify-center p-2 text-lg bg-gray-50") ]
     [ inner ]
 
 blockedCell :: forall m. H.ComponentHTML Action () m
