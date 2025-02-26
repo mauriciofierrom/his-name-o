@@ -128,7 +128,7 @@ render { board, mode } =
     , HH.div
         [ HP.class_ (ClassName "p-4") ]
         [ HH.div
-            [ HP.class_ (ClassName "grid grid-cols-5 gap-1") ]
+            [ HP.class_ (ClassName "grid grid-flow-col grid-rows-5 gap-1") ]
             (renderCells mode board.board)
         ]
     , HH.div
