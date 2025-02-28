@@ -17,6 +17,7 @@ module App.Persistence
 
 import Prelude
 
+import Data.Array (zip)
 import Data.Tuple (Tuple(..), snd)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Map as M
@@ -71,7 +72,7 @@ fromPersistentBoard { id, name, board: values } =
   , board: M.fromFoldable
       [ Tuple B (map (Tuple false <<< fromPersistedValue) values.b)
       , Tuple I (map (Tuple false <<< fromPersistedValue) values.i)
-      , Tuple N (map (Tuple false <<< fromPersistedValue) values.n)
+      , Tuple N (zip [ false, false, true, false, false ] $ map fromPersistedValue values.n)
       , Tuple G (map (Tuple false <<< fromPersistedValue) values.g)
       , Tuple O (map (Tuple false <<< fromPersistedValue) values.o)
       ]
