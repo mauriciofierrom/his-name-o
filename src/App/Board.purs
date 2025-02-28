@@ -14,6 +14,7 @@ module App.Board
   , Letter(..)
   , updateValue
   , updateMark
+  , parseNumber
   ) where
 
 import Prelude
