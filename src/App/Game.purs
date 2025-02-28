@@ -46,7 +46,7 @@ instance Show WinCondition where
 
 -- | The list of winning conditions
 winConditions :: Array WinCondition
-winConditions = [ Line Horizontal ]
+winConditions = [ Line Horizontal, Line Vertical ]
 
 check :: Int -> Array MarkedValue -> Boolean
 check idx values = fromMaybe false $ fst <$> index values idx
@@ -57,4 +57,6 @@ checkWinCondition letter num (Line Horizontal) board = fromMaybe false $ do
   lastIndex <- getIndexInBoard letter num board
   let values = L.toUnfoldable $ M.values board.board
   pure $ all (check lastIndex) values
-checkWinCondition _ _ _ _ = false
+checkWinCondition letter _ (Line Vertical) board = fromMaybe false $ do
+  column <- M.lookup letter board.board
+  pure $ all fst column
