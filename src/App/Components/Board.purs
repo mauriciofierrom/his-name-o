@@ -10,7 +10,7 @@ module App.Components.Board
 import Prelude
 
 import Control.Promise (toAffE)
-import App.Board (Board, BoardValue(..), Id, Index, Letter, MarkedValue, emptyBoard, toString, updateValue)
+import App.Board (Board, BoardValue(..), Id, Index, Letter(N), MarkedValue, emptyBoard, toString, updateValue)
 import Data.Map (Map)
 import Data.Map as M
 import Data.List as L
@@ -37,7 +37,7 @@ import App.Persistence (deleteBoard, saveBoard, toPersistentBoard)
 data Input
   = Create
   | Edit Board
-  | View Board
+  | View Board Boolean
 
 -- | The component's outputs
 -- |
@@ -54,6 +54,7 @@ data Output
 type State =
   { board :: Board
   , mode :: Mode
+  , winner :: Boolean
   }
 
 data Action
@@ -81,9 +82,9 @@ component =
     }
   where
   initialState :: Input -> State
-  initialState Create = { board: emptyBoard, mode: Edition }
-  initialState (View board) = { board, mode: Display }
-  initialState (Edit board) = { board, mode: Edition }
+  initialState Create = { board: emptyBoard, mode: Edition, winner: false }
+  initialState (View board winner) = { board, mode: Display, winner }
+  initialState (Edit board) = { board, mode: Edition, winner: false }
 
 handleAction :: forall m. MonadAff m => Action -> H.HalogenM State Action () Output m Unit
 handleAction = case _ of
@@ -103,25 +104,30 @@ handleAction = case _ of
     H.raise $ Deleted id
   Receive Create -> pure unit
   Receive (Edit _board) -> pure unit
-  Receive (View board) -> H.modify_ \st -> st { board = board }
+  Receive (View board winner) -> H.modify_ \st -> st { board = board, winner = winner }
 
 render :: forall m. State -> H.ComponentHTML Action () m
-render { board, mode } =
+render { board, mode, winner } =
   HH.div
     [ HP.class_ (ClassName "bg-white rounded-lg shadow-md") ]
     [ HH.div
         [ HP.class_ (ClassName "px-4 py-3 bg-gray-50 border-b flex justify-between items-center") ]
         [ HH.h3
             [ HP.class_ (ClassName "text-lg font-semibold") ]
-            [ case mode of
-                Edition -> HH.input
-                  [ HP.type_ HP.InputText
-                  , HP.value board.name
-                  , HP.class_ (ClassName "w-full px-3 py-2 border rounded-md")
-                  , HE.onValueInput UpdateBoardName
+            ( case mode of
+                Edition ->
+                  [ HH.input
+                      [ HP.type_ HP.InputText
+                      , HP.value board.name
+                      , HP.class_ (ClassName "w-full px-3 py-2 border rounded-md")
+                      , HE.onValueInput UpdateBoardName
+                      ]
                   ]
-                Display -> HH.text board.name
-            ]
+                Display ->
+                  [ if winner then HH.i [ HP.class_ (ClassName "bi bi-trophy") ] [] else HH.text ""
+                  , HH.text board.name
+                  ]
+            )
         , HH.div
             [ HP.class_ (ClassName "flex gap-2") ]
             (displayActions mode board)
