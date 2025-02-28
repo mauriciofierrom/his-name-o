@@ -15,6 +15,7 @@ module App.Board
   , updateValue
   , updateMark
   , parseNumber
+  , getIndexInBoard
   ) where
 
 import Prelude
@@ -156,13 +157,8 @@ updateValue letter idx value leBoard =
 -- Unmark a value in the board
 updateMark :: String -> Board -> Board
 updateMark rawNumber board = fromMaybe board $ do
-  Tuple letter number <- parseNumber rawNumber
-  column <- M.lookup letter board.board
-  idx <- findIndex (numberPred number) column
+  Tuple letter idx <- getCoordinate rawNumber board
   pure $ markValue letter idx board
-  where
-  numberPred number (Tuple _ (Number n)) = n == number
-  numberPred _ _ = false
 
 markValue :: Letter -> Index -> Board -> Board
 markValue letter idx board =
@@ -179,3 +175,17 @@ parseNumber str = do
   let numberStr = drop 1 str
   number <- fromString numberStr
   pure $ Tuple letter number
+
+getCoordinate :: String -> Board -> Maybe (Tuple Letter Index)
+getCoordinate rawNumber board = do
+  Tuple letter number <- parseNumber rawNumber
+  idx <- getIndexInBoard letter number board
+  pure $ Tuple letter idx
+
+getIndexInBoard :: Letter -> Int -> Board -> Maybe Index
+getIndexInBoard letter number board = do
+  column <- M.lookup letter board.board
+  findIndex numberPred column
+  where
+  numberPred (Tuple _ (Number n)) = n == number
+  numberPred _ = false
