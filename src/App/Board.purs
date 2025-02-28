@@ -137,7 +137,11 @@ empties N = [ Empty, Empty, None, Empty, Empty ]
 empties _ = replicate 5 Empty
 
 initialValues :: Map Letter (Array MarkedValue)
-initialValues = M.fromFoldable $ map (\letter -> Tuple letter (zip (replicate 5 false) $ empties letter)) allLetters
+initialValues =
+  let
+    initialMark letter = if letter == N then [ false, false, true, false, false ] else replicate 5 false
+  in
+    M.fromFoldable $ map (\letter -> Tuple letter (zip (initialMark letter) $ empties letter)) allLetters
 
 updateColumnValue :: Index -> String -> Array MarkedValue -> Array MarkedValue
 updateColumnValue idx value values =
