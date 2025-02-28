@@ -3,13 +3,15 @@
 -- | The main container of the application
 module App.Home (component) where
 
+import App.Game (Direction(..), WinCondition(..), checkWinCondition, winConditions)
+import Data.Tuple (Tuple(..))
 import Prelude
 
-import App.Board (Board, Id, updateMark)
+import App.Board (Board, Id, parseNumber, updateMark)
 import App.Components.Board as Board
 import App.Persistence (openDB, loadBoards, fromPersistentBoard)
 import Control.Promise (toAffE)
-import Data.Array (filter, find, head, null, tail, (:))
+import Data.Array (filter, find, head, null, tail, (:), (!!))
 import Data.Foldable (for_)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Effect.Aff.Class (class MonadAff)
@@ -20,12 +22,18 @@ import Halogen.HTML.Events as HE
 import Halogen.HTML.Properties as HP
 import Type.Proxy (Proxy(..))
 
+type BoardState =
+  { winner :: Boolean
+  , board :: Board
+  }
+
 type State =
-  { boards :: Array Board
+  { boards :: Array BoardState
   , showModal :: Boolean
   , currentBoard :: Maybe Board
   , number :: String
   , pastNumbers :: Array String
+  , winCondition :: WinCondition
   }
 
 data Action
@@ -37,11 +45,19 @@ data Action
   | AddNumber
   | UndoAddNumber
   | ClearBoards
+  | SetWinCondition WinCondition
   | HandleBoard Board.Output
 
 component :: forall q i o m. MonadAff m => H.Component q i o m
 component = H.mkComponent
-  { initialState: \_ -> { boards: [], showModal: false, currentBoard: Nothing, number: "", pastNumbers: [] }
+  { initialState: \_ ->
+      { boards: []
+      , showModal: false
+      , currentBoard: Nothing
+      , number: ""
+      , pastNumbers: []
+      , winCondition: Line Horizontal
+      }
   , render
   , eval: H.mkEval H.defaultEval
       { handleAction = handleAction
@@ -60,7 +76,7 @@ handleAction = case _ of
     handleAction LoadBoards
   LoadBoards -> do
     newBoards <- H.liftAff $ toAffE loadBoards
-    H.modify_ \st -> st { boards = map fromPersistentBoard newBoards }
+    H.modify_ \st -> st { boards = map (\board -> { winner: false, board: fromPersistentBoard board }) newBoards }
   OpenModal -> H.modify_ \st -> st { showModal = true }
   CloseModal -> do
     H.modify_ \st -> st { showModal = false, currentBoard = Nothing }
@@ -68,30 +84,53 @@ handleAction = case _ of
   UpdateNumber value -> do
     H.modify_ \st -> st { number = value }
   AddNumber -> do
-    H.modify_ \st -> st
-      { boards = map (updateMark st.number) st.boards
-      , pastNumbers = st.number : st.pastNumbers
-      , number = ""
-      }
+    st <- H.get
+    for_ (parseNumber st.number) $ \(Tuple letter num) -> do
+      let markedBoards = map (\bs -> bs { board = updateMark st.number bs.board }) st.boards
+      H.modify_
+        ( _
+            { boards = checkedBoards letter num markedBoards st
+            , pastNumbers = st.number : st.pastNumbers
+            , number = ""
+            }
+        )
   UndoAddNumber -> do
     state <- H.get
     let mbLastNumber = head state.pastNumbers
-    for_ mbLastNumber \lastNumber -> do
-      H.modify_ \st -> st
-        { boards = map (updateMark lastNumber) st.boards
-        , pastNumbers = fromMaybe [] $ tail st.pastNumbers
-        }
+    for_ mbLastNumber \lastNumber ->
+      for_ (parseNumber lastNumber) \(Tuple letter num) -> do
+        let markedBoards = map (\bs -> bs { board = updateMark lastNumber bs.board }) state.boards
+        H.modify_
+          ( _
+              { boards = checkedBoards letter num markedBoards state
+              , pastNumbers = fromMaybe [] $ tail state.pastNumbers
+              }
+          )
   ClearBoards -> do
     H.modify_ \st -> st
       { number = ""
       , pastNumbers = []
       }
     handleAction LoadBoards
+  SetWinCondition wc ->
+    H.modify_ \st -> st { winCondition = wc }
   HandleBoard (Board.StartEdition id) ->
-    H.modify_ \st -> st { currentBoard = find (\b -> b.id == Just id) st.boards, showModal = true }
+    H.modify_ \st -> st
+      { currentBoard = _.board <$> find ((==) (Just id) <<< _.board.id) st.boards
+      , showModal = true
+      }
   HandleBoard Board.CancelEdition -> handleAction CloseModal
   HandleBoard (Board.Deleted id) ->
-    H.modify_ \st -> st { boards = filter (\b -> b.id /= Just id) st.boards }
+    H.modify_ \st -> st { boards = filter (\bs -> bs.board.id /= Just id) st.boards }
+  where
+  checkedBoards letter num markedBoards st =
+    map
+      ( \bs ->
+          bs
+            { winner = checkWinCondition letter num st.winCondition bs.board
+            }
+      )
+      markedBoards
 
 render :: forall m. MonadAff m => State -> H.ComponentHTML Action Slots m
 render state =
@@ -103,6 +142,7 @@ render state =
             [ HP.class_ (ClassName "text-3xl font-bold") ]
             [ HH.text "Bingo Boards" ]
         , if null state.boards then HH.text "" else inputNumber state
+        , winConditionPicker
         , HH.button
             [ HP.class_ (ClassName "bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded")
             , HE.onClick \_ -> OpenModal
@@ -151,15 +191,37 @@ clearBoardsButton =
     ]
     [ HH.i [ HP.class_ (ClassName "bi bi-radioactive") ] [] ]
 
+winConditionPicker :: forall m. MonadAff m => H.ComponentHTML Action Slots m
+winConditionPicker =
+  HH.div
+    [ HP.class_ (ClassName "flex gap-2") ]
+    [ HH.label
+        [ HP.class_ (ClassName "font-medium text-gray-700")
+        ]
+        [ HH.text "Win Condition" ]
+    , HH.select
+        [ HE.onSelectedIndexChange \i ->
+            SetWinCondition $ fromMaybe (Line Horizontal) $ winConditions !! i
+        ]
+        (map winSelectionPickerOption winConditions)
+    ]
+
+winSelectionPickerOption :: forall m. MonadAff m => WinCondition -> H.ComponentHTML Action Slots m
+winSelectionPickerOption wc =
+  HH.option
+    [ HP.value (show wc)
+    ]
+    [ HH.text (show wc) ]
+
 renderBoards :: forall m. MonadAff m => State -> H.ComponentHTML Action Slots m
 renderBoards state =
   HH.div
     [ HP.class_ (ClassName "flex flex-row flex-wrap gap-6") ]
     (map renderBoard state.boards)
 
-renderBoard :: forall m. MonadAff m => Board -> H.ComponentHTML Action Slots m
-renderBoard board =
-  HH.slot _board (fromMaybe 0 board.id) Board.component (Board.View board) HandleBoard
+renderBoard :: forall m. MonadAff m => BoardState -> H.ComponentHTML Action Slots m
+renderBoard { board, winner } =
+  HH.slot _board (fromMaybe 0 board.id) Board.component (Board.View board winner) HandleBoard
 
 renderModal :: forall m. MonadAff m => State -> H.ComponentHTML Action Slots m
 renderModal state =
