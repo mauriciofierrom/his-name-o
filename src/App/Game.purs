@@ -50,6 +50,7 @@ instance Show Slant where
 data WinCondition
   = Line Direction
   | Diagonal Slant
+  | Full
 
 derive instance genericWinCondition :: Generic WinCondition _
 derive instance eqWinCondition :: Eq WinCondition
@@ -65,6 +66,7 @@ winConditions =
   , Line Vertical
   , Diagonal Forward
   , Diagonal Backward
+  , Full
   ]
 
 check :: Int -> Array MarkedValue -> Boolean
@@ -92,3 +94,6 @@ checkWinCondition _ _ (Diagonal Backward) { board } = fromMaybe false $ do
   Tuple g _ <- flip index 3 =<< M.lookup G board
   Tuple o _ <- flip index 4 =<< M.lookup O board
   pure $ b && i && g && o
+checkWinCondition _ _ Full { board } =
+  let values = L.toUnfoldable $ M.values board
+   in all (all fst) values
