@@ -1,6 +1,6 @@
 # His Name O!
 
-This is a SPA to enter and keep track of multiple American-style BINGO boards games
+This is a SPA to enter and keep track of multiple American-style BINGO board games
 
 > [!CAUTION]
 > This is a work-in-progress (re)learning project, rushed for a particular use case
