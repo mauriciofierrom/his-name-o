@@ -7,6 +7,7 @@ import App.Game (Direction(..), WinCondition(..), checkWinCondition, winConditio
 import Data.Tuple (Tuple(..))
 import Prelude
 
+import Web.UIEvent.KeyboardEvent (code)
 import App.Board (Board, Id, parseNumber, updateMark)
 import App.Components.Board as Board
 import App.Persistence (openDB, loadBoards, fromPersistentBoard)
@@ -47,6 +48,7 @@ data Action
   | ClearBoards
   | SetWinCondition WinCondition
   | HandleBoard Board.Output
+  | None
 
 component :: forall q i o m. MonadAff m => H.Component q i o m
 component = H.mkComponent
@@ -71,6 +73,7 @@ _board = Proxy :: Proxy "board"
 
 handleAction :: forall o m. MonadAff m => Action -> H.HalogenM State Action Slots o m Unit
 handleAction = case _ of
+  None -> pure unit
   Initialize -> do
     _ <- H.liftAff $ toAffE openDB
     handleAction LoadBoards
@@ -167,6 +170,7 @@ inputNumber state =
         , HP.value state.number
         , HP.class_ (ClassName "px-3 py-3 w-40 border-2 border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500")
         , HE.onValueInput UpdateNumber
+        , HE.onKeyDown \ke -> if code ke == "Enter" then AddNumber else None
         ]
     , HH.button
         [ HP.class_ (ClassName "px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2")
