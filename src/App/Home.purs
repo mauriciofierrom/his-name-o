@@ -143,7 +143,7 @@ render state =
         [ HP.class_ (ClassName "flex justify-between items-center mb-6") ]
         [ HH.h1
             [ HP.class_ (ClassName "text-3xl font-bold") ]
-            [ HH.text "Bingo Boards" ]
+            [ HH.text "His-name-O!" ]
         , if null state.boards then HH.text "" else inputNumber state
         , winConditionPicker
         , HH.button
