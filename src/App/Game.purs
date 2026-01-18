@@ -52,6 +52,7 @@ data WinCondition
   | Diagonal Slant
   | Five
   | Full
+  | Corner
 
 derive instance genericWinCondition :: Generic WinCondition _
 derive instance eqWinCondition :: Eq WinCondition
@@ -69,6 +70,7 @@ winConditions =
   , Diagonal Backward
   , Full
   , Five
+  , Corner
   ]
 
 check :: Int -> Array MarkedValue -> Boolean
@@ -101,6 +103,13 @@ checkWinCondition letter num Five board =
   checkWinCondition letter num (Line Vertical) board ||
   checkWinCondition letter num (Diagonal Forward) board ||
   checkWinCondition letter num (Diagonal Backward) board
+checkWinCondition _ _ Corner { board } = fromMaybe false $ do
+  Tuple bTop _ <- flip index 0 =<< M.lookup B board
+  Tuple bBottom _ <- flip index 4 =<< M.lookup B board
+  Tuple oTop _ <- flip index 0 =<< M.lookup O board
+  Tuple oBottom _ <- flip index 4 =<< M.lookup O board
+  pure $ bTop && bBottom && oTop && oBottom
+
 checkWinCondition _ _ Full { board } =
   let values = L.toUnfoldable $ M.values board
    in all (all fst) values
