@@ -50,6 +50,7 @@ instance Show Slant where
 data WinCondition
   = Line Direction
   | Diagonal Slant
+  | Five
   | Full
 
 derive instance genericWinCondition :: Generic WinCondition _
@@ -94,6 +95,11 @@ checkWinCondition _ _ (Diagonal Backward) { board } = fromMaybe false $ do
   Tuple g _ <- flip index 3 =<< M.lookup G board
   Tuple o _ <- flip index 4 =<< M.lookup O board
   pure $ b && i && g && o
+checkWinCondition letter num Five board =
+  checkWinCondition letter num (Line Horizontal) board ||
+  checkWinCondition letter num (Line Vertical) board ||
+  checkWinCondition letter num (Diagonal Forward) board ||
+  checkWinCondition letter num (Diagonal Backward) board
 checkWinCondition _ _ Full { board } =
   let values = L.toUnfoldable $ M.values board
    in all (all fst) values
