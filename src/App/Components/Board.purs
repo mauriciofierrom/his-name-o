@@ -176,7 +176,7 @@ editActions Edition =
 cellWrapper :: forall m. Boolean -> H.ComponentHTML Action () m -> H.ComponentHTML Action () m
 cellWrapper marked inner =
   let
-    bg = if marked then "bg-red-50" else "bg-gray-50"
+    bg = if marked then "bg-red-500" else "bg-gray-50"
   in
     HH.div
       [ HP.class_ (ClassName $ bg <> " h-full w-full aspect-square border-none rounded flex items-center justify-center p-2 text-lg") ]
