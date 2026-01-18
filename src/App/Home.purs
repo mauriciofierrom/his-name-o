@@ -12,7 +12,7 @@ import App.Board (Board, Id, parseNumber, updateMark)
 import App.Components.Board as Board
 import App.Persistence (openDB, loadBoards, fromPersistentBoard)
 import Control.Promise (toAffE)
-import Data.Array (filter, find, head, null, tail, (:), (!!))
+import Data.Array (filter, find, head, null, tail, sortWith, (:), (!!))
 import Data.Foldable (for_)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Effect.Aff.Class (class MonadAff)
@@ -92,7 +92,7 @@ handleAction = case _ of
       let markedBoards = map (\bs -> bs { board = updateMark st.number bs.board }) st.boards
       H.modify_
         ( _
-            { boards = checkedBoards letter num markedBoards st
+            { boards = sortByBoardWinner $ checkedBoards letter num markedBoards st
             , pastNumbers = st.number : st.pastNumbers
             , number = ""
             }
@@ -105,7 +105,7 @@ handleAction = case _ of
         let markedBoards = map (\bs -> bs { board = updateMark lastNumber bs.board }) state.boards
         H.modify_
           ( _
-              { boards = checkedBoards letter num markedBoards state
+              { boards = sortByBoardWinner $ checkedBoards letter num markedBoards state
               , pastNumbers = fromMaybe [] $ tail state.pastNumbers
               }
           )
@@ -252,3 +252,6 @@ renderModal state =
             Nothing -> HH.slot _board 999 Board.component Board.Create HandleBoard
         ]
     ]
+
+sortByBoardWinner :: Array BoardState -> Array BoardState
+sortByBoardWinner = sortWith (not <<< _.winner)
