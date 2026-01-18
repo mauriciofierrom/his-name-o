@@ -49,6 +49,7 @@ instance Show Slant where
 
 data WinCondition
   = Line Direction
+  | AnyLine
   | Diagonal Slant
   | Five
   | Full
@@ -66,6 +67,7 @@ winConditions :: Array WinCondition
 winConditions =
   [ Line Horizontal
   , Line Vertical
+  , AnyLine
   , Diagonal Forward
   , Diagonal Backward
   , Full
@@ -86,6 +88,9 @@ checkWinCondition letter num (Line Horizontal) board = fromMaybe false $ do
 checkWinCondition letter _ (Line Vertical) board = fromMaybe false $ do
   column <- M.lookup letter board.board
   pure $ all fst column
+checkWinCondition letter num AnyLine board =
+  checkWinCondition letter num (Line Horizontal) board ||
+  checkWinCondition letter num (Line Vertical) board
 checkWinCondition _ _ (Diagonal Forward) { board } = fromMaybe false $ do
   Tuple b _ <- flip index 4 =<< M.lookup B board
   Tuple i _ <- flip index 3 =<< M.lookup I board
@@ -109,7 +114,6 @@ checkWinCondition _ _ Corner { board } = fromMaybe false $ do
   Tuple oTop _ <- flip index 0 =<< M.lookup O board
   Tuple oBottom _ <- flip index 4 =<< M.lookup O board
   pure $ bTop && bBottom && oTop && oBottom
-
 checkWinCondition _ _ Full { board } =
   let values = L.toUnfoldable $ M.values board
    in all (all fst) values
