@@ -204,7 +204,7 @@ renderCell (Tuple marked value) =
     case value of
       Number number -> HH.text (show number)
       Empty -> HH.text ""
-      None -> HH.i [ HP.class_ (ClassName $ "bi bi-x-lg" <> if marked then " bg-teal" else "") ] []
+      None -> HH.i [ HP.class_ (ClassName $ "bi bi-x-lg" <> if marked then " bg-red" else "") ] []
 
 renderCells :: forall m. Mode -> Map Letter (Array MarkedValue) -> Array (H.ComponentHTML Action () m)
 renderCells Display board = map renderCell (concat $ L.toUnfoldable $ M.values board)
