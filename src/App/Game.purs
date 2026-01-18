@@ -68,6 +68,7 @@ winConditions =
   , Diagonal Forward
   , Diagonal Backward
   , Full
+  , Five
   ]
 
 check :: Int -> Array MarkedValue -> Boolean
