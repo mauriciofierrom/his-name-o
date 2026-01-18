@@ -124,7 +124,7 @@ render { board, mode, winner } =
                       ]
                   ]
                 Display ->
-                  [ if winner then HH.i [ HP.class_ (ClassName "bi bi-trophy") ] [] else HH.text ""
+                  [ if winner then HH.i [ HP.class_ (ClassName "bi bi-trophy text-red-700") ] [] else HH.text ""
                   , HH.text board.name
                   ]
             )
