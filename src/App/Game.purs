@@ -51,6 +51,7 @@ data WinCondition
   = Line Direction
   | AnyLine
   | Diagonal Slant
+  | AnyDiagonal
   | Five
   | Full
   | Corner
@@ -70,6 +71,7 @@ winConditions =
   , AnyLine
   , Diagonal Forward
   , Diagonal Backward
+  , AnyDiagonal
   , Full
   , Five
   , Corner
@@ -103,6 +105,9 @@ checkWinCondition _ _ (Diagonal Backward) { board } = fromMaybe false $ do
   Tuple g _ <- flip index 3 =<< M.lookup G board
   Tuple o _ <- flip index 4 =<< M.lookup O board
   pure $ b && i && g && o
+checkWinCondition letter num AnyDiagonal board =
+  checkWinCondition letter num (Diagonal Forward) board ||
+  checkWinCondition letter num (Diagonal Backward) board
 checkWinCondition letter num Five board =
   checkWinCondition letter num (Line Horizontal) board ||
   checkWinCondition letter num (Line Vertical) board ||
