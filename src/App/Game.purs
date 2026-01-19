@@ -56,6 +56,7 @@ data WinCondition
   | Full
   | Corner
   | L
+  | Square
 
 derive instance genericWinCondition :: Generic WinCondition _
 derive instance eqWinCondition :: Eq WinCondition
@@ -77,6 +78,7 @@ winConditions =
   , Five
   , Corner
   , L
+  , Square
   ]
 
 check :: Int -> Array MarkedValue -> Boolean
@@ -126,6 +128,15 @@ checkWinCondition _ _ L board = fromMaybe false $ do
   column <- M.lookup B board.board
   -- All last roew + all the first column
   pure $ all (check 4) values && all fst column
+checkWinCondition _ _ Square board = fromMaybe false $ do
+  let values = L.toUnfoldable $ M.values board.board
+      isTopRowMarked = all (check 0) values
+      isBottomRowMarked = all (check 4) values
+  isBColumnMarked <- all fst <$> M.lookup B board.board
+  isOColumnMarked <- all fst <$> M.lookup O board.board
+  pure $
+    isTopRowMarked && isBottomRowMarked && isBColumnMarked && isOColumnMarked
+
 checkWinCondition _ _ Full { board } =
   let values = L.toUnfoldable $ M.values board
    in all (all fst) values
