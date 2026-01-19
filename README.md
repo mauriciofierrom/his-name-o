@@ -48,7 +48,7 @@ A re-learning project of PureScript and Halogen.
 
 ### Prerequisites
 
-**Nix (recommended)**
+**Nix flakes (recommended)**
 ```bash
 # Enter development shell with all dependencies
 nix develop
@@ -61,8 +61,10 @@ nix develop
 - esbuild
 
 ### Setup
+
+Install dependencies
+
 ```bash
-# Install dependencies
 npm install
 spago install
 ```
